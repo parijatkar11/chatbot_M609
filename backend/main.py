@@ -3,40 +3,41 @@ FastAPI Backend for Mortgage Chatbot Application
 Handles chat requests and manages LangGraph workflows
 """
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, List
-import os
-from dotenv import load_dotenv
 import logging
 import uuid
 from datetime import datetime
 
-# Import LangGraph
-from graph import get_chatbot_graph, reset_graph
+from config.settings import settings
 
-# Load environment variables
-load_dotenv()
+# Import the workflow whether the module is loaded as ``backend.main`` or
+# directly by Uvicorn from the backend directory.
+try:
+    from .graph import get_chatbot_graph, reset_graph
+except ImportError:
+    from graph import get_chatbot_graph, reset_graph
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=getattr(logging, settings.api_log_level.upper(), logging.INFO))
 logger = logging.getLogger(__name__)
 
 # Initialize FastAPI app
 app = FastAPI(
-    title="Mortgage Chatbot API",
-    description="Backend API for Mortgage Chatbot with LangGraph Workflow Engine",
-    version="1.0.0",
-    docs_url="/api/docs",
-    openapi_url="/api/openapi.json"
+    title=f"{settings.app_name} API",
+    description=settings.app_description,
+    version=settings.app_version,
+    docs_url="/api/docs" if settings.api_docs_enabled else None,
+    openapi_url="/api/openapi.json" if settings.api_docs_enabled else None,
 )
 
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=settings.cors_origins,
+    allow_credentials="*" not in settings.cors_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -47,14 +48,14 @@ app.add_middleware(
 
 class Message(BaseModel):
     """Chat message model"""
-    content: str = Field(..., min_length=1, max_length=5000, description="Message content")
+    content: str = Field(..., min_length=1, max_length=settings.max_input_length, description="Message content")
     user: str = Field(default="user", description="Message sender")
     timestamp: Optional[str] = Field(default=None, description="Message timestamp")
 
 
 class ChatRequest(BaseModel):
     """Chat request model"""
-    message: str = Field(..., min_length=1, max_length=5000, description="User message")
+    message: str = Field(..., min_length=1, max_length=settings.max_input_length, description="User message")
     conversation_id: Optional[str] = Field(default=None, description="Conversation ID")
     user_context: Optional[Dict[str, Any]] = Field(default=None, description="Additional user context")
 
@@ -104,7 +105,7 @@ class GraphStructure(BaseModel):
     edges: List[tuple] = Field(..., description="List of edges")
     start_node: str = Field(..., description="Start node")
     end_nodes: List[str] = Field(..., description="End nodes")
-    node_descriptions: Dict[str, str] = Field(..., description="Node descriptions")
+    node_descriptions: Dict[str, str] = Field(default_factory=dict, description="Node descriptions")
 
 
 class ExecutionHistory(BaseModel):
@@ -154,8 +155,8 @@ def get_or_create_conversation(conversation_id: Optional[str] = None) -> str:
 async def root():
     """Root endpoint"""
     return {
-        "name": "Mortgage Chatbot API",
-        "version": "1.0.0",
+        "name": f"{settings.app_name} API",
+        "version": settings.app_version,
         "docs": "/api/docs",
         "health": "/health",
         "graph": "/graph/structure"
@@ -290,7 +291,7 @@ async def start_conversation(request: ConversationStart):
                 "timestamp": datetime.utcnow().isoformat()
             })
         else:
-            response = "Welcome to the Mortgage Chatbot! How can I assist you today?"
+            response = f"Welcome to {settings.app_name}! How can I assist you today?"
         
         return {
             "conversation_id": conversation_id,
@@ -602,7 +603,7 @@ async def get_customer_interactions(conversation_id: str, limit: int = 10):
     """
     try:
         graph = get_chatbot_graph()
-        interactions = graph.get_interaction_history(conversation_id, limit=limit)
+        interactions = graph.get_customer_interactions(conversation_id, limit=limit)
         return {
             "conversation_id": conversation_id,
             "interactions": interactions,
@@ -720,15 +721,11 @@ async def get_statistics():
 
 if __name__ == "__main__":
     import uvicorn
-    
-    host = os.getenv("API_HOST", "127.0.0.1")
-    port = int(os.getenv("API_PORT", 8000))
-    debug = os.getenv("API_DEBUG", "false").lower() == "true"
-    
+
     uvicorn.run(
-        app,
-        host=host,
-        port=port,
-        debug=debug,
-        log_level="info"
+        "backend.main:app",
+        host=settings.api_host,
+        port=settings.api_port,
+        reload=settings.api_debug,
+        log_level=settings.api_log_level,
     )

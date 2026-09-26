@@ -41,21 +41,16 @@ pip install -r requirements.txt
 ### 2. Configure Environment
 
 ```bash
-# Copy example config
-copy .env.example .env
-
-# Edit .env with your settings (optional for basic testing)
-# - OPENAI_API_KEY: Your OpenAI API key (if using LLM features)
-# - API_HOST: Backend host (default: 127.0.0.1)
-# - API_PORT: Backend port (default: 8000)
+# Select dev (the default), test, or prod with APP_ENV.
+# Each profile reads .env.dev, .env.test, or .env.prod respectively.
+# Set secrets such as OPENAI_API_KEY in the process environment/secret store.
 ```
 
 ### 3. Start the FastAPI Backend
 
 ```bash
-# Terminal 1: Start FastAPI server
-cd backend
-uvicorn main:app --reload --host 127.0.0.1 --port 8000
+# Terminal 1: Start FastAPI using the selected profile's host and port
+python -m backend.main
 ```
 
 Output should show:
@@ -76,9 +71,8 @@ curl http://localhost:8000/health
 ### 4. Start the Streamlit Frontend
 
 ```bash
-# Terminal 2: Start Streamlit app
-cd frontend
-streamlit run app.py
+# Terminal 2: Start Streamlit using the selected profile's port
+python run_frontend.py
 ```
 
 The app will open in your browser at `http://localhost:8501`

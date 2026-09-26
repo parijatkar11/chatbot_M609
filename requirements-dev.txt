@@ -1,0 +1,6 @@
+-r requirements.txt
+uv
+pytest
+pytest-asyncio
+pytest-cov
+reportlab

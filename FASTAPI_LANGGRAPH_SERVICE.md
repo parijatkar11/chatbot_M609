@@ -247,23 +247,10 @@ Get API statistics.
 
 ### Environment Variables
 
-```env
-# API Configuration
-API_HOST=127.0.0.1
-API_PORT=8000
-API_DEBUG=false
-
-# LLM Configuration
-OPENAI_API_KEY=your_api_key_here
-MODEL_NAME=gpt-4
-
-# Streamlit Configuration
-STREAMLIT_PORT=8501
-
-# LangGraph Configuration
-LANGGRAPH_DEBUG=false
-LANGGRAPH_TIMEOUT=60
-```
+Select a profile with `APP_ENV=dev`, `APP_ENV=test`, or `APP_ENV=prod` (default:
+`dev`). The service loads `.env.<profile>`, with process environment values taking
+precedence. See `.env.example` for the full list of API, model, Streamlit, and
+LangGraph settings. Inject `OPENAI_API_KEY` through a deployment secret store.
 
 ### Settings File
 
@@ -273,9 +260,8 @@ See `config/settings.py` for configuration management using Pydantic.
 
 ### Start Backend
 
-```bash
-cd backend
-uvicorn main:app --reload --host 127.0.0.1 --port 8000
+```powershell
+python -m backend.main
 ```
 
 ### API Documentation
