@@ -6,6 +6,8 @@ import logging
 from typing import Dict, Any, Optional
 from datetime import datetime
 
+from config.settings import settings
+
 logger = logging.getLogger(__name__)
 
 
@@ -128,8 +130,8 @@ def sanitize_input(text: str) -> str:
     text = " ".join(text.split())
     
     # Limit length
-    if len(text) > 5000:
-        text = text[:5000]
+    if len(text) > settings.max_input_length:
+        text = text[:settings.max_input_length]
     
     return text
 
