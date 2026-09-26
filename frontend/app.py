@@ -5,25 +5,21 @@ Provides an interactive interface for mortgage inquiries with conversation histo
 
 import streamlit as st
 import requests
-import os
-from dotenv import load_dotenv
 from datetime import datetime
-import json
 
-# Load environment variables
-load_dotenv()
+from config.settings import settings
 
 # Configuration
-API_BASE_URL = f"http://{os.getenv('API_HOST', '127.0.0.1')}:{os.getenv('API_PORT', 8000)}"
-PAGE_TITLE = "Mortgage Chatbot"
-PAGE_ICON = "🏦"
+API_BASE_URL = settings.resolved_api_base_url
+PAGE_TITLE = settings.streamlit_page_title
+PAGE_ICON = settings.streamlit_page_icon
 
 # Set page configuration
 st.set_page_config(
     page_title=PAGE_TITLE,
     page_icon=PAGE_ICON,
-    layout="wide",
-    initial_sidebar_state="expanded"
+    layout=settings.streamlit_layout,
+    initial_sidebar_state=settings.streamlit_sidebar_state,
 )
 
 # Initialize session state
@@ -40,7 +36,7 @@ if "current_conversation" not in st.session_state:
     st.session_state.current_conversation = None
 
 if "await_human_approval" not in st.session_state:
-    st.session_state.await_human_approval = False
+    st.session_state.await_human_approval = settings.streamlit_hil_enabled
 
 if "hil_message" not in st.session_state:
     st.session_state.hil_message = ""
@@ -83,7 +79,7 @@ def send_message(user_message: str):
                     "conversation_id": st.session_state.current_conversation,
                     "user_context": {}
                 },
-                timeout=30
+                timeout=settings.api_request_timeout
             )
             
             if response.status_code == 200:
@@ -121,7 +117,7 @@ def send_message(user_message: str):
 def get_api_stats():
     """Get API statistics"""
     try:
-        response = requests.get(f"{API_BASE_URL}/stats", timeout=10)
+        response = requests.get(f"{API_BASE_URL}/stats", timeout=settings.api_stats_timeout)
         if response.status_code == 200:
             return response.json()
     except:
@@ -184,7 +180,7 @@ with st.sidebar:
         try:
             response = requests.get(
                 f"{API_BASE_URL}/customer/{st.session_state.current_conversation}/details",
-                timeout=5
+                timeout=settings.api_customer_timeout
             )
             if response.status_code == 200:
                 customer = response.json()
@@ -232,10 +228,10 @@ with st.sidebar:
         st.session_state.await_human_approval = True
         hil_timeout = st.slider(
             "Approval Timeout (seconds)",
-            min_value=30,
-            max_value=300,
-            value=120,
-            step=30,
+            min_value=settings.streamlit_hil_timeout_min,
+            max_value=settings.streamlit_hil_timeout_max,
+            value=settings.streamlit_hil_timeout_default,
+            step=settings.streamlit_hil_timeout_step,
             help="How long to wait for human approval"
         )
     else:
@@ -247,25 +243,25 @@ with st.sidebar:
     st.markdown("**Model Configuration**")
     model_name = st.text_input(
         "Model Name",
-        value=os.getenv("MODEL_NAME", "gpt-4"),
+        value=settings.model_name,
         help="LLM model to use"
     )
     
     temperature = st.slider(
         "Temperature",
-        min_value=0.0,
-        max_value=2.0,
-        value=0.7,
-        step=0.1,
+        min_value=settings.model_temperature_min,
+        max_value=settings.model_temperature_max,
+        value=settings.model_temperature,
+        step=settings.model_temperature_step,
         help="Randomness of responses"
     )
     
     max_tokens = st.slider(
         "Max Tokens",
-        min_value=50,
-        max_value=2000,
-        value=500,
-        step=50,
+        min_value=settings.model_max_tokens_min,
+        max_value=settings.model_max_tokens_max,
+        value=settings.model_max_tokens,
+        step=settings.model_max_tokens_step,
         help="Maximum response length"
     )
 
@@ -276,14 +272,14 @@ with st.sidebar:
 
 # Banner
 st.markdown(
-    """
+    f"""
     <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
                 padding: 20px; border-radius: 10px; margin-bottom: 20px;">
-        <h1 style="color: white; margin: 0; text-align: center;">
-            🏦 MORTGAGE CHATBOT
+            <h1 style="color: white; margin: 0; text-align: center;">
+            {settings.app_name.upper()}
         </h1>
         <p style="color: rgba(255,255,255,0.9); text-align: center; margin: 10px 0 0 0;">
-            Ask about mortgages, rates, and loan options
+            {settings.app_description}
         </p>
     </div>
     """,
@@ -348,7 +344,8 @@ with col1:
         "Type your message...",
         placeholder="Ask about mortgages, rates, or loan options...",
         key="chat_input",
-        label_visibility="collapsed"
+        label_visibility="collapsed",
+        max_chars=settings.max_input_length,
     )
 
 with col2:

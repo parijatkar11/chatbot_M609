@@ -30,29 +30,26 @@
    pip install -r requirements.txt
    ```
 
-4. **Setup environment variables**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
+4. **Select a configuration profile**
+   Set `APP_ENV` to `dev`, `test`, or `prod`; it defaults to `dev` and loads
+   the matching `.env.<profile>` file. Environment variables override the file.
+   Provide API keys through local secrets or the deployment secret manager.
 
 ## Running the Application
 
 ### Terminal 1: Start Backend
-```bash
-cd backend
-uvicorn main:app --reload --host 127.0.0.1 --port 8000
+```powershell
+python -m backend.main
 ```
 
 **API Documentation**: http://127.0.0.1:8000/docs
 
 ### Terminal 2: Start Frontend
-```bash
-cd frontend
-streamlit run app.py
+```powershell
+python run_frontend.py
 ```
 
-**Application**: http://localhost:8501
+**Application**: http://localhost:<STREAMLIT_PORT> (8501 in dev)
 
 ## Project Structure
 
@@ -88,15 +85,16 @@ streamlit run app.py
 
 ## Testing
 
-```bash
-# Install pytest
-pip install pytest pytest-asyncio
+```powershell
+# Create and activate a virtual environment
+uv venv
+.venv\Scripts\activate
 
-# Run tests
-pytest
+# Install runtime and test dependencies
+uv pip install -r requirements-dev.txt
 
-# Run with coverage
-pytest --cov=backend
+# Run the suite; pytest.ini enforces at least 90% backend/config coverage
+python -m pytest
 ```
 
 ## Debugging
@@ -114,12 +112,12 @@ pytest --cov=backend
 ## Common Issues
 
 ### Backend won't start
-- Check if port 8000 is in use: `netstat -an | find ":8000"`
-- Verify API_HOST and API_PORT in .env
+- Check whether the port configured by API_PORT is in use.
+- Verify APP_ENV selects the expected profile and API_HOST/API_PORT are valid.
 
 ### Frontend can't connect to backend
 - Ensure backend is running
-- Check API_HOST and API_PORT are correct
+- Check API_BASE_URL, or API_HOST and API_PORT, are correct
 - Verify no firewall blocking localhost
 
 ### Dependencies issues

@@ -39,30 +39,34 @@ pip install -r requirements.txt
 
 ### 3. Configure Environment
 
-```bash
-cp .env.example .env
-# Edit .env and add your API keys and configuration
+Choose a profile with `APP_ENV=dev`, `APP_ENV=test`, or `APP_ENV=prod`.
+The default is `dev`; settings are loaded from `.env.dev`, `.env.test`, or
+`.env.prod`. Process environment variables override values in those files.
+The profile files contain no credentials. Supply `OPENAI_API_KEY` using a
+local, untracked secret or your deployment's secret manager.
+
+```powershell
+# Optional: dev is the default
+$env:APP_ENV = "dev"
 ```
 
 ## Running the Application
 
 ### Start Backend (FastAPI)
 
-```bash
-cd backend
-uvicorn main:app --reload --host 127.0.0.1 --port 8000
+```powershell
+python -m backend.main
 ```
 
-The API will be available at `http://127.0.0.1:8000`
-API documentation: `http://127.0.0.1:8000/docs`
+The API will be available at the configured API host and port.
+API documentation (when enabled): `/api/docs`
 
 ### Start Frontend (Streamlit)
 
 In a new terminal:
 
-```bash
-cd frontend
-streamlit run app.py
+```powershell
+python run_frontend.py
 ```
 
 The app will open at `http://localhost:8501`
@@ -89,12 +93,9 @@ The app will open at `http://localhost:8501`
 
 ## Environment Variables
 
-See `.env.example` for required environment variables:
-
-- `OPENAI_API_KEY`: Your OpenAI API key
-- `API_HOST`: Backend API host
-- `API_PORT`: Backend API port
-- `MODEL_NAME`: LLM model to use
+See `.env.example` for the full setting list. The profile files configure API
+host/port, CORS, docs, logging, request limits/timeouts, model parameters,
+Streamlit appearance/port, approval controls, and LangGraph behavior.
 
 ## License
 

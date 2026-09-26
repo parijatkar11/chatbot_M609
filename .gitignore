@@ -21,9 +21,9 @@ __pycache__/
 .streamlit/
 *.streamlit.run
 
-# FastAPI
-__pycache__/
-.pytest_cache/
+# Test and coverage artifacts
+.coverage
+htmlcov/
 
 # Dependencies
 *.egg-info/
@@ -40,5 +40,4 @@ logs/
 *.cache
 
 # OS
-.DS_Store
 Thumbs.db

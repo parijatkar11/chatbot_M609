@@ -2,14 +2,11 @@
 
 from datetime import datetime
 import logging
-import os
 import random
 import re
 from typing import Any, Dict, List, Optional, TypedDict
 
-from dotenv import load_dotenv
-
-load_dotenv()
+from config.settings import settings
 logger = logging.getLogger(__name__)
 
 
@@ -84,7 +81,7 @@ class CustomerMemoryManager:
     def extract_customer_info_from_message(self, text: str) -> Dict[str, Optional[str]]:
         account_number = None
         patterns = [
-            r"account\s+(?:number|#|no\.?)\s*:?\s*(\d+)",
+            r"account\s+(?:number|#|no\.?)\s*(?:is\s*)?:?\s*(\d+)",
             r"acct\s*:?\s*(\d+)",
             r"#(\d{6,10})",
             r"(?:my|the)\s+account\s+(?:is|no\.?)\s*(\d+)",
@@ -128,9 +125,11 @@ class CustomerMemoryManager:
 
 class ChatbotGraph:
     def __init__(self):
-        self.model_name = os.getenv("MODEL_NAME", "gpt-4")
-        self.debug_mode = os.getenv("LANGGRAPH_DEBUG", "false").lower() == "true"
-        self.timeout = int(os.getenv("LANGGRAPH_TIMEOUT", "60"))
+        self.model_name = settings.model_name
+        self.model_temperature = settings.model_temperature
+        self.model_max_tokens = settings.model_max_tokens
+        self.debug_mode = settings.langgraph_debug
+        self.timeout = settings.langgraph_timeout
         self.memory_manager = CustomerMemoryManager()
         self.node_history: Dict[str, Dict[str, Any]] = {}
         self.graph = self._initialize_graph()
@@ -161,8 +160,8 @@ class ChatbotGraph:
         if not text:
             state["response"] = "Error: Empty input received"
             state["internal_state"] = "validation_failed"
-        elif len(text) > 5000:
-            state["response"] = "Error: Input too long (max 5000 characters)"
+        elif len(text) > settings.max_input_length:
+            state["response"] = f"Error: Input too long (max {settings.max_input_length} characters)"
             state["internal_state"] = "validation_failed"
         else:
             state["internal_state"] = "input_validated"
@@ -268,7 +267,15 @@ class ChatbotGraph:
         }
 
     def get_graph_structure(self) -> Dict[str, Any]:
-        return {"nodes": list(self.graph["nodes"]), "edges": self.graph["edges"], "start_node": self.graph["start_node"], "end_nodes": self.graph["end_nodes"]}
+        return {
+            "nodes": list(self.graph["nodes"]),
+            "edges": self.graph["edges"],
+            "start_node": self.graph["start_node"],
+            "end_nodes": self.graph["end_nodes"],
+            "node_descriptions": {
+                node: details["name"] for node, details in self.graph["nodes"].items()
+            },
+        }
 
     def get_execution_history(self, conversation_id: str) -> Dict[str, Any]:
         return self.node_history.get(conversation_id, {})
