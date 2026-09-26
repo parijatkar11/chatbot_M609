@@ -1,0 +1,44 @@
+# Environment
+.env
+.env.local
+.env.*.local
+venv/
+env/
+ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Streamlit
+.streamlit/
+*.streamlit.run
+
+# FastAPI
+__pycache__/
+.pytest_cache/
+
+# Dependencies
+*.egg-info/
+dist/
+build/
+
+# Logs
+*.log
+logs/
+
+# Cache
+.cache/
+.pytest_cache/
+*.cache
+
+# OS
+.DS_Store
+Thumbs.db
